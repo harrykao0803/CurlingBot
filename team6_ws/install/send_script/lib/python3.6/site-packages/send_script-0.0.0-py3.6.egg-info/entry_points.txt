@@ -1,0 +1,5 @@
+[console_scripts]
+img_sub = send_script.image_sub:main
+play = send_script.play:main
+send_script = send_script.send_script:main
+

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="static/logo.png" type="image/png">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <title>Robot Face with Speech-to-Text</title>
+</head>
+<body>
+    <div class="robot-face">
+        <div class="antenna"></div>
+        <div class="eye left"></div>
+        <div class="eye right"></div>
+        <div class="mouth"></div>
+    </div>
+
+    <button id="speech-button">Start Speaking</button>
+    <div id="recognized-text">Speech will appear here...</div>
+
+    <div>
+        <button class="emotion-button" onclick="setEmotion('happy')">Happy</button>
+        <button class="emotion-button" onclick="setEmotion('sad')">Sad</button>
+        <button class="emotion-button" onclick="setEmotion('angry')">Angry</button>
+        <button class="emotion-button" onclick="setEmotion('surprised')">Surprised</button>
+    </div>
+
+    <div>
+        <button id="throw-button" class="btn btn-primary">Throw Stone</button>
+    </div>
+
+    <audio id="audio-player" style="display:none;" controls>
+        Your browser does not support the audio element.
+    </audio>
+
+    <script src="{{ url_for('static', filename='js/robot_face.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/emotion.js') }}"></script>   
+</body>
+</html>

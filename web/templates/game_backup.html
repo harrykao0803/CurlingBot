@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="icon" href="static/logo.png" type="image/png">
+    <title>High-Tech Friendly Robot</title>
+    <style>
+        body {
+            background: linear-gradient(135deg, #e0f7fa, #b3e5fc);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+        }
+        .game-container {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+        }
+        .robot-face {
+            width: 280px;
+            height: 280px;
+            background: radial-gradient(circle, #ffffff, #cce7ff);
+            border-radius: 50%;
+            position: relative;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+            animation: pulse 3s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+        }
+        .eye {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(145deg, #ffffff, #b0d9f7);
+            border-radius: 50%;
+            position: absolute;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            animation: blink 5s infinite;
+        }
+        .eye.left {
+            left: 60px;
+        }
+        .eye.right {
+            right: 60px;
+        }
+        .pupil {
+            width: 25px;
+            height: 25px;
+            background: radial-gradient(circle, #333, #000);
+            border-radius: 50%;
+            animation: pupil-move 3s infinite alternate;
+        }
+        @keyframes blink {
+            0%, 90%, 100% {
+                height: 50px;
+            }
+            95% {
+                height: 10px;
+            }
+        }
+        @keyframes pupil-move {
+            0% {
+                transform: translate(0, 0);
+            }
+            50% {
+                transform: translate(5px, -5px);
+            }
+            100% {
+                transform: translate(-5px, 5px);
+            }
+        }
+        .mouth {
+            width: 140px;
+            height: 50px;
+            background: linear-gradient(145deg, #ff6f6f, #ff8f8f);
+            border-radius: 25px;
+            position: absolute;
+            bottom: 30px;
+            animation: talk 1s infinite alternate;
+        }
+        @keyframes talk {
+            0% {
+                transform: scaleY(1);
+            }
+            100% {
+                transform: scaleY(0.7);
+            }
+        }
+        .antenna {
+            width: 12px;
+            height: 60px;
+            background: linear-gradient(145deg, #76bfff, #addfff);
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 5px;
+            animation: antenna-sway 2s infinite alternate;
+        }
+        .antenna-ball {
+            width: 25px;
+            height: 25px;
+            background: radial-gradient(circle, #ff6f6f, #ff8f8f);
+            border-radius: 50%;
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        @keyframes antenna-sway {
+            0% {
+                transform: translateX(-50%) rotate(-10deg);
+            }
+            100% {
+                transform: translateX(-50%) rotate(10deg);
+            }
+        }
+        .chat-box {
+            width: 320px;
+            margin-top: 20px;
+        }
+        .chat-input {
+            display: flex;
+            margin-top: 10px;
+        }
+        .chat-input input {
+            flex-grow: 1;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+        .chat-input button {
+            margin-left: 10px;
+            padding: 10px 20px;
+            border: none;
+            background: linear-gradient(145deg, #76bfff, #addfff);
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .chat-messages {
+            max-height: 220px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 8px;
+            background-color: white;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <button id="play-button" class="btn btn-primary">Play</button>
+    <div class="game-container">
+        <div class="robot-face">
+            <div class="antenna">
+                <div class="antenna-ball"></div>
+            </div>
+            <div class="eye left">
+                <div class="pupil"></div>
+            </div>
+            <div class="eye right">
+                <div class="pupil"></div>
+            </div>
+            <div class="mouth"></div>
+        </div>
+        <div class="chat-box">
+            <div class="chat-messages" id="chat-messages"></div>
+            <div class="chat-input">
+                <input type="text" id="chat-input" placeholder="Say something...">
+                <button id="send-button">Send</button>
+            </div>
+        </div>
+    </div>
+    <audio id="audio-player" style="display: none;"></audio>
+    <script>
+        const playButton = document.getElementById("play-button");
+        const gameContainer = document.querySelector(".game-container");
+        const chatMessages = document.getElementById("chat-messages");
+        const chatInput = document.getElementById("chat-input");
+        const sendButton = document.getElementById("send-button");
+        const audioPlayer = document.getElementById("audio-player");
+
+        let smallTalkInterval;
+
+        playButton.addEventListener("click", () => {
+            playButton.style.display = "none";
+            gameContainer.style.display = "flex";
+            checkEnableSmallTalk();
+        });
+
+        function addMessage(text, sender = "user") {
+            const message = document.createElement("div");
+            message.className = "chat-message";
+            message.style.textAlign = sender === "robot" ? "left" : "right";
+            message.textContent = text;
+            chatMessages.appendChild(message);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        sendButton.addEventListener("click", () => {
+            const userText = chatInput.value.trim();
+            if (!userText) return;
+            addMessage(userText, "user");
+            chatInput.value = "";
+            setTimeout(() => {
+                const robotResponse = `I heard: "${userText}".`;
+                addMessage(robotResponse, "robot");
+            }, 1000);
+        });
+
+        function checkEnableSmallTalk() {
+            smallTalkInterval = setInterval(async () => {
+                try {
+                    const response = await fetch("/get_enable_small_talk");
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.enable_small_talk && data.enable_small_talk !== 'No') {
+                            prompt = data.enable_small_talk
+                            await fetch("/set_enable_small_talk", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ enable_small_talk: 'No' }),
+                            });
+                            handleSmallTalk(prompt);
+                        }
+                    }
+                } catch (error) {
+                    console.error("Error checking small talk:", error);
+                }
+            }, 1000);
+        }
+
+        async function handleSmallTalk(userInput) {
+            try {
+                const qaResponse = await fetch("/qa", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ text: userInput }),
+                });
+                if (!qaResponse.ok) throw new Error("QA error");
+                const qaData = await qaResponse.json();
+                addMessage(qaData.response, "robot");
+                const ttsResponse = await fetch("/tts", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ text: qaData.response }),
+                });
+                if (!ttsResponse.ok) throw new Error("TTS error");
+                const timestamp = new Date().getTime();
+                audioPlayer.src = `/static/output.mp3?t=${timestamp}`;
+                audioPlayer.play();
+            } catch (error) {
+                console.error("Error handling small talk:", error);
+            }
+        }
+    </script>
+</body>
+</html>

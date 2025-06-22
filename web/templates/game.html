@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <title>Sleek Robot Interface</title>
+    <style>
+        body {
+            background: radial-gradient(circle, #212529, #141517);
+            color: #fff;
+            font-family: 'Poppins', sans-serif;
+            display: flex;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+        }
+        .left-panel {
+            width: 25%;
+            background: #292b2f;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 15px;
+            border-right: 2px solid #495057;
+            text-align: center;
+        }
+        .dialogue-history {
+            flex-grow: 1;
+            overflow-y: auto;
+            border: 1px solid #495057;
+            border-radius: 10px;
+            padding: 10px;
+            background: #1f2124;
+            width: 100%;
+        }
+        .dialogue-message {
+            margin-bottom: 10px;
+        }
+        .robot-container {
+            width: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .robot-face {
+            width: 300px;
+            height: 300px;
+            background: #333;
+            border-radius: 50%;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .eye {
+            width: 50px;
+            height: 50px;
+            background: #fff;
+            border-radius: 50%;
+            position: absolute;
+            animation: blink 5s infinite;
+        }
+        .eye.left {
+            left: 70px;
+        }
+        .eye.right {
+            right: 70px;
+        }
+        .eye.sleeping {
+            height: 10px; /* Closed eye effect */
+            background: #fff;
+            animation: none; /* Disable blinking animation while sleeping */
+        }
+        @keyframes blink {
+            0%, 90%, 100% { height: 50px; }
+            95% { height: 10px; }
+        }
+        .mouth {
+            width: 120px;
+            height: 20px;
+            background: #ff4d4d;
+            border-radius: 10px;
+            position: absolute;
+            bottom: 50px;
+            transition: all 0.3s ease;
+        }
+        .mouth.happy {
+            background: #00ff7f;
+            transform: scale(1.2);
+        }
+        .mouth.sad {
+            background: #007bff;
+            transform: rotate(180deg);
+        }
+        .mouth.angry {
+            background: #ff4d4d;
+            transform: scale(1.1);
+        }
+        .mouth.bored {
+            background: #ffa500;
+            width: 150px;
+        }
+        .zzz {
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 24px;
+            color: #bbb;
+            animation: floatUp 3s infinite;
+            opacity: 0;
+            display: none;
+        }
+        @keyframes floatUp {
+            0% { transform: translate(-50%, 0); opacity: 1; }
+            100% { transform: translate(-50%, -100px); opacity: 0; }
+        }
+        .buttons {
+            margin-top: 20px;
+            display: flex;
+            gap: 15px;
+        }
+        .emotion-buttons {
+            margin-top: 15px;
+        }
+        .emotion-buttons button {
+            padding: 10px;
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .emotion-buttons button:hover {
+            background-color: #1e88e5;
+        }
+        .right-panel {
+            width: 25%;
+            background: #292b2f;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 15px;
+            border-left: 2px solid #495057;
+            text-align: center;
+        }
+        .game-info {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .game-info h2, .game-info p {
+            margin: 10px 0;
+        }
+        /* Modal Content Background and Text */
+        .modal-content {
+            background-color: #343a40; /* Dark background for the modal */
+            color: #ffffff;           /* Light text for contrast */
+            border: 1px solid #495057; /* Border to distinguish modal edges */
+        }
+
+        /* Modal Header */
+        .modal-header {
+            background-color: #495057; /* Slightly lighter background for the header */
+            color: #ffffff;            /* Ensure text is still readable */
+        }
+
+        /* Modal Footer Buttons */
+        .modal-footer .btn-primary {
+            background-color: #2196F3; /* Button background color */
+            border: none;
+        }
+
+        .modal-footer .btn-primary:hover {
+            background-color: #1e88e5; /* Hover effect for the button */
+        }
+
+        .modal-footer .btn-close {
+            background-color: transparent;
+            color: #ffffff;
+        }
+
+        /* Modal Body Text */
+        .modal-body {
+            font-size: 1.2rem; /* Slightly larger text for readability */
+            text-align: center; /* Center the text */
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Left Panel -->
+        <div class="left-panel">
+            <h3>Dialogue History</h3>
+            <div class="dialogue-history" id="dialogue-history"></div>
+        </div>
+
+        <!-- Robot Center -->
+        <div class="robot-container">
+            <div class="robot-face">
+                <div class="eye left" id="left-eye"></div>
+                <div class="eye right" id="right-eye"></div>
+                <div class="mouth neutral" id="mouth"></div>
+                <div class="zzz" id="zzz">Z Z Z...</div>
+            </div>
+            <div class="buttons">
+                <button class="btn btn-danger" id="next-button">Next</button>
+                <button class="btn btn-success" id="speech-button">Start Speaking</button>
+                <button class="btn btn-warning" id="reset-button">Play</button>
+            </div>
+            <div id="recognized-text">Speech will appear here...</div>
+            <audio id="audio-player" style="display:none;" controls>
+                Your browser does not support the audio element.
+            </audio>
+            <!-- <div class="emotion-buttons">
+                <button onclick="changeEmotion('happy')">Happy</button>
+                <button onclick="changeEmotion('sad')">Sad</button>
+                <button onclick="changeEmotion('angry')">Angry</button>
+                <button onclick="changeEmotion('bored')">Bored</button>
+                <button onclick="changeEmotion('neutral')">Neutral</button>
+            </div> -->
+        </div>
+
+        <!-- Right Panel -->
+        <div class="right-panel">
+            <h3>Game Info</h3>
+            <div class="game-info">
+                <h2 id="round-number">Menu</h2>
+                <p id="current-turn">Turn: Player</p>
+                <p id="emotion">Emotion: happy</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Result Modal -->
+    <div class="modal fade" id="resultModal" tabindex="-1" aria-labelledby="resultModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="resultModalLabel">Game Result</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Image Section -->
+                    <img id="modalResultImage" src="static/logo.png" alt="Game Result" class="img-fluid mb-3" style="max-height: 200px; object-fit: contain;">
+                    <!-- Text Section -->
+                    <p id="modalResultText"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+  
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const mouth = document.getElementById("mouth");
+        const zzz = document.getElementById("zzz");
+        const leftEye = document.getElementById("left-eye");
+        const rightEye = document.getElementById("right-eye");
+        const dialogueHistory = document.getElementById("dialogue-history");
+        const nextButton = document.getElementById("next-button");
+        const resetButton = document.getElementById("reset-button");
+
+        const roundNumber = document.getElementById("round-number");
+        const currentTurn = document.getElementById("current-turn");
+        const emotionObj = document.getElementById("emotion");
+
+        function changeEmotion(emotion) {
+            mouth.className = `mouth ${emotion}`;
+            if (emotion === "bored") {
+                zzz.style.display = "block";
+                leftEye.classList.add("sleeping");
+                rightEye.classList.add("sleeping");
+            } else {
+                zzz.style.display = "none";
+                leftEye.classList.remove("sleeping");
+                rightEye.classList.remove("sleeping");
+            }
+            emotionObj.innerText = `Emotion: ${emotion}`
+        }
+
+        function encodeResult(resultPos) {
+            let resultObj = [];
+            resultPos.forEach(result => {
+                let encodedResult = result.map(r => String(r)).join(' ');
+                resultObj.push(encodedResult);
+            });
+            return resultObj.join(' ');
+        }
+
+        function decodeResult(resultStr) {
+            let results = resultStr.split(' ');
+            let resultList = [];
+            for (let i = 0; i < results.length; i += 4) resultList.push(results.slice(i, i + 4));
+            return resultList;
+        }
+
+        async function updateInfo() {
+            const response = await fetch("/get_state");
+            if (response.ok) {
+                const data = await response.json();
+                current_state = data.state;
+                current_round = data.round;
+                
+                if(current_state === 'robot') currentTurn.innerText = 'Turn: Robot';
+                else if(current_state === 'human') currentTurn.innerText = 'Turn: Human';
+                else if(current_state === 'result') {
+                    setTimeout(async () => {
+                        const res = await fetch("/get_result");
+                        if (res.ok) {
+                            res_obj = await res.json();
+                            resultStr = res_obj.result_pos;
+                            result = decodeResult(resultStr);
+                        }
+                        // Ensure `result` has the expected structure
+                        if (result && result.length > 0) {
+                            winner_color = result[0][0];
+                            let winner = '';
+                            const modalResultImage = document.getElementById("modalResultImage");
+                            if (winner_color == 'blue') {
+                                winner = 'Robot';
+                                modalResultImage.src = 'static/robot-arm.png'
+                            }
+                            else if (winner_color == 'orange') {
+                                winner = 'Human';
+                                modalResultImage.src = 'static/prof-Fu.png'
+                            }
+                            const score = result.length;
+
+                            // Update modal content
+                            const modalResultText = document.getElementById("modalResultText");
+                            modalResultText.textContent = `Winner: ${winner} (${score} points)`;
+
+                            const resultModal = new bootstrap.Modal(document.getElementById("resultModal"));
+                            resultModal.show();
+                        } else {
+                            console.error("Invalid result data:", result);
+                        }
+                    }, 4000); // Delay so that result was updated first!
+                }
+                else currentTurn.innerText = '';
+
+                if(current_state === 'robot' || current_state === 'human') roundNumber.innerText = `Round: ${current_round}`;
+                else if (current_state === 'menu') roundNumber.innerText = 'Menu';
+                else if (current_state === 'result') roundNumber.innerText = 'Result';
+                else if (current_state === 'in-game') roundNumber.innerText = 'Ready to Start';
+                else roundNumber.innerText = '';
+
+            }
+        }
+
+        nextButton.addEventListener("click", async () => {
+            addMessage('next step!', 'system');
+            const response = await fetch("/progress", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({}),
+            });
+            await updateInfo();
+        });
+
+
+        let smallTalkInterval;
+        let speechInterval;
+        resetButton.addEventListener("click", async () => {
+            const response = await fetch("/set_state", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({'state': 'in-game', 'round': 1}),
+            });
+            await updateInfo();
+            if (smallTalkInterval) clearInterval(smallTalkInterval);
+            if (checkSpeech) clearInterval(speechInterval);
+            checkEnableSmallTalk();
+            checkSpeech();
+            changeEmotion("neutral");
+            dialogueHistory.innerHTML = "";
+            resetButton.textContent = 'Reset';
+        });
+
+        function addMessage(text, sender = "user") {
+            const message = document.createElement("div");
+            message.className = "chat-message";
+            message.style.textAlign = sender === "robot" ? "left" : "right";
+            if(sender === "system") message.style.textAlign = "center";
+            message.textContent = text;
+            dialogueHistory.appendChild(message);
+            dialogueHistory.scrollTop = dialogueHistory.scrollHeight;
+        }
+
+        function checkEnableSmallTalk() {
+            smallTalkInterval = setInterval(async () => {
+                try {
+                    const response = await fetch("/get_enable_small_talk");
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.enable_small_talk && data.enable_small_talk !== 'No') {
+                            prompt = data.enable_small_talk
+                            instruction = data.small_talk_instruction
+                            await fetch("/set_enable_small_talk", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ enable_small_talk: 'No', small_talk_instruction: '' }),
+                            });
+                            handleSmallTalk(instruction, prompt);
+                        }
+                    }
+                } catch (error) {
+                    console.error("Error checking small talk:", error);
+                }
+            }, 1000);
+        }
+
+        function checkSpeech() {
+            speechInterval = setInterval(async () => {
+                try {
+                    const response = await fetch("/get_speech");
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.speech && data.speech !== 'No') {
+                            speech_text = data.speech
+                            await fetch("/trigger_speech", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ speech: 'No' }),
+                            });
+                            handleSpeech(speech_text);
+                        }
+                    }
+                } catch (error) {
+                    console.error("Error checking small talk:", error);
+                }
+            }, 1000);
+        }
+
+        async function handleSmallTalk(instruction, userInput) {
+            try {
+                const qaResponse = await fetch("/qa", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ 'instruction': instruction, 'text' : userInput }),
+                });
+                if (!qaResponse.ok) throw new Error("QA error");
+                const qaData = await qaResponse.json();
+                addMessage(qaData.response, "robot");
+                const ttsResponse = await fetch("/tts", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ text: qaData.response }),
+                });
+                if (!ttsResponse.ok) throw new Error("TTS error");
+                const timestamp = new Date().getTime();
+                audioPlayer.src = `/static/output.mp3?t=${timestamp}`;
+                audioPlayer.play();
+
+                // Update emotion
+                const emotionRes = await fetch("/qa_emotion", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ 'text' : qaData.response }),
+                });
+                if (!emotionRes.ok) throw new Error("QA error");
+                const emotionVal = await emotionRes.json();
+                if (emotionVal.response == 'happy' || emotionVal.response == 'sad' || emotionVal.response == 'angry' || emotionVal.response == 'bored' || emotionVal.response == 'neutral') changeEmotion(emotionVal.response);
+
+            } catch (error) {
+                console.error("Error handling small talk:", error);
+            }
+        }
+
+        async function handleSpeech(userInput) {
+            try {
+                addMessage(userInput, "robot");
+                const ttsResponse = await fetch("/tts", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ text: userInput }),
+                });
+                if (!ttsResponse.ok) throw new Error("TTS error");
+                const timestamp = new Date().getTime();
+                audioPlayer.src = `/static/output.mp3?t=${timestamp}`;
+                audioPlayer.play();
+
+                // Update emotion
+                const emotionRes = await fetch("/qa_emotion", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ 'text' : userInput }),
+                });
+                if (!emotionRes.ok) throw new Error("QA error");
+                const emotionVal = await emotionRes.json();
+                if (emotionVal.response == 'happy' || emotionVal.response == 'sad' || emotionVal.response == 'angry' || emotionVal.response == 'bored' || emotionVal.response == 'neutral') changeEmotion(emotionVal.response);
+
+            } catch (error) {
+                console.error("Error handling sspeech:", error);
+            }
+        }
+
+        const speechButton = document.getElementById('speech-button');
+        const recognizedTextDiv = document.getElementById('recognized-text');
+        const audioPlayer = document.getElementById('audio-player');
+        let isRecognizing = false;
+        let isProcessing = false;
+
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+        if (SpeechRecognition) {
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'en-US';
+            recognition.interimResults = true;
+            recognition.maxAlternatives = 1;
+
+            function updateButtonStyle() {
+                if (isRecognizing) {
+                    speechButton.textContent = "Stop Speaking";
+                    speechButton.classList.remove('start-speaking');
+                    speechButton.classList.add('stop-speaking');
+                } else {
+                    speechButton.textContent = "Start Speaking";
+                    speechButton.classList.remove('stop-speaking');
+                    speechButton.classList.add('start-speaking');
+                }
+            }
+
+            function startRecognition() {
+                if (isRecognizing) recognition.stop();
+                else recognition.start();
+                updateButtonStyle();
+            }
+
+            recognition.onstart = () => {
+                isRecognizing = true;
+                updateButtonStyle();
+            };
+
+            recognition.onspeechend = () => {
+                if (isRecognizing) {
+                    recognition.stop();
+                    speechButton.textContent = "Start Speaking";
+                    isRecognizing = false;
+                    updateButtonStyle();
+                    sendToServer(recognizedTextDiv.textContent);
+                }
+            };
+
+            recognition.onerror = (event) => {
+                console.error("Speech recognition error:", event.error);
+                recognizedTextDiv.textContent = `Error: ${event.error}. Please try again.`;
+                speechButton.textContent = "Start Speaking";
+                isRecognizing = false;
+                updateButtonStyle();
+            };
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[event.resultIndex][0].transcript;
+                recognizedTextDiv.textContent = transcript;
+            };
+
+            speechButton.onclick = () => {
+                if (isRecognizing) {
+                    recognition.stop();
+                    isRecognizing = false;
+                    updateButtonStyle();
+                } else {
+                    startRecognition();
+                }
+            };
+        } else {
+            recognizedTextDiv.textContent = "Speech recognition is not supported in this browser.";
+        }
+
+        async function sendToServer(text) {
+            const formData = new FormData();
+            formData.append('text', text);
+
+            if (!text.trim()) return; // No text to send.
+
+            try {
+                if (isProcessing) return; // Skip if already processing.
+                isProcessing = true;
+
+                addMessage(text, 'user');
+                
+                // Check if it's a command
+                const response = await fetch("/get_state");
+                if (response.ok) {
+                    const data = await response.json();
+                    current_state = data.state;
+                    current_round = data.round;
+                    if (current_state != 'robot') {
+                        const commandCheck = await fetch('/qa_command', { method: 'POST', body: formData });
+                        if (commandCheck.ok) {
+                            commandRes = await commandCheck.json();
+                            commandResText = commandRes.response;
+                            commandResText = commandResText.trim();
+                            if (commandResText == "progress") {
+                                const response = await fetch("/progress", {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({}),
+                                });
+                                await updateInfo();
+                                return;
+                            }
+                        }
+                    }
+                }
+
+                // Step 1: Send text to /qa and get the response
+                const qaResponse = await fetch('/qa', { method: 'POST', body: formData });
+                if (!qaResponse.ok) {
+                    alert("Error getting QA response.");
+                    isProcessing = false;
+                    return;
+                }
+
+                const qaData = await qaResponse.json();
+                const qaText = qaData.response; // Extract the response text
+
+                if (!qaText.trim()) {
+                    alert("QA response is empty.");
+                    isProcessing = false;
+                    return;
+                }
+
+                addMessage(qaText, 'robot')
+
+                // Step 2: Send the QA response to /tts for speech generation
+                const ttsFormData = new FormData();
+                ttsFormData.append('text', qaText);
+
+                const ttsResponse = await fetch('/tts', { method: 'POST', body: ttsFormData });
+                if (ttsResponse.ok) {
+                    const timestamp = new Date().getTime();
+                    audioPlayer.src = `/static/output.mp3?t=${timestamp}`;
+                    audioPlayer.play();
+
+                    // Handle when audio ends
+                    audioPlayer.onended = () => {
+                        startRecognition();
+                        speechButton.textContent = "Stop Speaking";
+                        isProcessing = false;
+                    };
+                } else {
+                    alert("Error generating speech.");
+                    isProcessing = false;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                recognizedTextDiv.textContent = "Error processing speech.";
+                isProcessing = false;
+            }
+        }
+
+
+    </script>
+</body>
+</html>
